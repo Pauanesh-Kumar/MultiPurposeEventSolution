@@ -1,0 +1,43 @@
+name: CI - build/test and push to ACR
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  IMAGE_NAME: app-api
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore, Build & Test
+        run: |
+          dotnet restore
+          dotnet build -c Release --no-restore
+          dotnet test --no-build -c Release
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: ACR Login
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Build and Push Docker image to ACR
+        run: |
+          ACR_LOGIN=${{ secrets.ACR_NAME }}.azurecr.io
+          IMAGE=$ACR_LOGIN/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker build -f App.API/Dockerfile -t $IMAGE ./App.API
+          docker push $IMAGE
+          echo "IMAGE=$IMAGE" >> $GITHUB_OUTPUT

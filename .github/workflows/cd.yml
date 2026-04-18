@@ -1,0 +1,39 @@
+name: CD - deploy to AKS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: app-api
+  K8S_NAMESPACE: testing
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
+
+      - name: Ensure namespace exists
+        run: kubectl get ns ${{ env.K8S_NAMESPACE }} || kubectl create ns ${{ env.K8S_NAMESPACE }}
+
+      - name: Deploy to AKS (replace image tag)
+        run: |
+          ACR_LOGIN=${{ secrets.ACR_NAME }}.azurecr.io
+          IMAGE=$ACR_LOGIN/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          sed "s|REPLACE_IMAGE|$IMAGE|g" k8s/deployment.yaml | kubectl -n ${{ env.K8S_NAMESPACE }} apply -f -
+          kubectl -n ${{ env.K8S_NAMESPACE }} apply -f k8s/service.yaml
+          kubectl -n ${{ env.K8S_NAMESPACE }} rollout status deployment/app-api-deployment --timeout=120s
