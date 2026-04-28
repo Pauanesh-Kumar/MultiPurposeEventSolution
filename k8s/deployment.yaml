@@ -15,10 +15,11 @@ spec:
         app: app-api
     spec:
       containers:
-        - name: app-api-container
-          image: REPLACE_IMAGE
-          ports:
-            - containerPort: 80
-          env:
-            - name: ASPNETCORE_ENVIRONMENT
-              value: "Production"
+      - name: app-api
+        image: REPLACE_IMAGE
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
