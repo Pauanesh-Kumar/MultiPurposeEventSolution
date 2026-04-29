@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-api-deployment
+  labels:
+    app: app-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app-api
+  template:
+    metadata:
+      labels:
+        app: app-api
+    spec:
+      containers:
+      - name: app-api
+        image: REPLACE_IMAGE
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"

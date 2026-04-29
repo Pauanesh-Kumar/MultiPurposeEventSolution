@@ -1,0 +1,45 @@
+name: CD - deploy to AKS (triggered by CI)
+
+on:
+  workflow_run:
+    workflows: ["CI - build, test and push image to ACR"]
+    types: [completed]
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    env:
+      ACR_LOGIN_SERVER: multipurposeacr.azurecr.io
+      IMAGE_NAME: multipurposeapp
+      K8S_NAMESPACE: testing
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login (for AKS context)
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          resource-group: azuredeploy_rg
+          cluster-name: aks_cluster_MultiApp
+
+      - name: Ensure namespace exists
+        run: kubectl get ns ${{ env.K8S_NAMESPACE }} || kubectl create ns ${{ env.K8S_NAMESPACE }}
+
+      - name: Debug manifests
+        run: |
+           echo "----- service.yaml -----"
+           cat k8s/service.yaml
+      - name: Deploy using the SHA-tagged image produced by CI
+        run: |
+          IMAGE=${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.event.workflow_run.head_sha }}
+          sed "s|REPLACE_IMAGE|$IMAGE|g" k8s/deployment.yaml | kubectl -n ${{ env.K8S_NAMESPACE }} apply -f -
+          kubectl -n ${{ env.K8S_NAMESPACE }} apply -f k8s/service.yaml
+          kubectl -n ${{ env.K8S_NAMESPACE }} rollout status deployment/app-api-deployment --timeout=120s
