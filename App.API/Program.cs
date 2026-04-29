@@ -109,6 +109,7 @@ namespace App.API
             app.UseRouting();
             app.UseCors("AllowAll");
             app.UseAuthentication();
+
             app.UseAuthorization();
             //app.UseCors();
 
