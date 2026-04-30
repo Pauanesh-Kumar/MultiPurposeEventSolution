@@ -37,8 +37,6 @@ namespace App.API
 
             builder.Host.UseSerilog();
 
-
-
             // Add services to the container.
 
             builder.Services.AddControllers();
