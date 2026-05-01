@@ -25,20 +25,23 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Debug Secrets
+        run: echo "Resource Group is ${{ secrets.AZURE_RESOURCE_GROUP }}"
+
       # 2. Deploy Azure SQL via Bicep
       - name: Deploy Azure SQL
         id: deploysql
         uses: azure/arm-deploy@v1
         with:
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          resourceGroupName: ${{ secrets.AKS_RESOURCE_GROUP }}
+          resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP }}
           template: infra/azure-sql.bicep
           parameters: >
             location=${{ secrets.AZURE_LOCATION }}
-            sqlServerName=my-sql-server
+            sqlServerName=${{ secrets.AZURE_SQL_SERVER_NAME }}
             administratorLogin=${{ secrets.AZURE_SQL_ADMIN_LOGIN }}
             administratorLoginPassword=${{ secrets.AZURE_SQL_ADMIN_PASSWORD }}
-            databaseName=${{ secrets.DATABASE_NAME }}
+            databaseName=${{ secrets.AZURE_SQL_DATABASE_NAME }}
 
       # Capture connection string output from Bicep
       - name: Set SQL Connection String
@@ -49,7 +52,7 @@ jobs:
         uses: azure/aks-set-context@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-          resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
+          resource-group: ${{ secrets.AZURE_RESOURCE_GROUP }}
           cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
 
       # 5. Deploy App to AKS
