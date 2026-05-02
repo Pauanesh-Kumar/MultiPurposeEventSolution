@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Windows, X64, sonarqube]
 
     steps:
       - name: Checkout code
@@ -18,7 +18,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'   # or your target version
+          dotnet-version: '9.0.x'
 
       - name: Restore dependencies
         run: dotnet restore
@@ -45,55 +45,3 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
-
-
-#CI.yaml file for building, testing and pushing Docker image to Azure Container Registry (ACR) on GitHub Actions. 
-#It triggers on pushes and pull requests to the main branch. The workflow sets up .NET, restores dependencies, 
-#builds the project, runs tests, and optionally logs into ACR and pushes the Docker image with an immutable tag based on the commit SHA.
-
-# name: CI - build, test and push image to ACR
-
-# on:
-#   push:
-#     branches: [ main ]
-#   pull_request:
-#     branches: [ main ]
-
-# env:
-#   ACR_LOGIN_SERVER: multipurposeacr.azurecr.io
-#   IMAGE_NAME: multipurposeapp
-
-# jobs:
-#   build-and-push:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout
-#         uses: actions/checkout@v4
-
-#       - name: Setup .NET
-#         uses: actions/setup-dotnet@v3
-#         with:
-#           dotnet-version: '9.0.x'
-
-#       - name: Restore, build and test
-#         run: |
-#           dotnet restore
-#           dotnet build -c Release
-#           dotnet test --no-build -c Release || true
-
-      # - name: Login to ACR (docker username/password)
-      #   uses: docker/login-action@v2
-      #   with:
-      #     registry: ${{ env.ACR_LOGIN_SERVER }}
-      #     username: ${{ secrets.ACR_USERNAME }}
-      #     password: ${{ secrets.ACR_PASSWORD }}
-
-      # - name: Build and push image (immutable tag = commit SHA)
-      #   run: |
-      #     IMAGE=${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-      #     docker build -f Dockerfile -t $IMAGE .
-      #     docker push $IMAGE
-      #     # optional latest tag for convenience (not used for production deploys)
-      #     docker tag $IMAGE ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
-      #     docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
