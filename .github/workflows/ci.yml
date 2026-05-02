@@ -1,4 +1,4 @@
-# This GitHub Actions workflow is designed to automate the build, test, and SonarQube analysis process for a .NET project.
+
 name: CI - Build, Test, and SonarQube Analysis
 
 on:
@@ -15,10 +15,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
+      # - name: Setup .NET
+      #   uses: actions/setup-dotnet@v4
+      #   with:
+      #     dotnet-version: '9.0.x'
+      #     install-dir: 'C:\actions-runner\dotnet'   # custom writable folder
+      #     cache: false
 
       - name: Restore dependencies
         run: dotnet restore
