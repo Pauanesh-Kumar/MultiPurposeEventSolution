@@ -46,3 +46,4 @@ jobs:
 
       - name: SonarQube End Analysis
         run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+
