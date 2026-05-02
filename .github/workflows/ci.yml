@@ -15,12 +15,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Skip setup-dotnet if already installed locally
       # - name: Setup .NET
       #   uses: actions/setup-dotnet@v4
       #   with:
       #     dotnet-version: '9.0.x'
-      #     install-dir: 'C:\actions-runner\dotnet'   # custom writable folder
-      #     cache: false
 
       - name: Restore dependencies
         run: dotnet restore
@@ -28,22 +27,22 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      - name: Run Unit Tests
+      - name: Run Unit Tests with Coverage
         run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage"
 
-      - name: SonarQube Scan
-        uses: sonarsource/sonarqube-scan-action@v2
-        with:
-          projectBaseDir: .
-          args: >
-            -Dsonar.projectKey=my-dotnet-multi-purpose-webapp
-            -Dsonar.cs.opencover.reportsPaths=**/TestResults/*/coverage.cobertura.xml
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - name: Install SonarScanner
+        run: dotnet tool install --global dotnet-sonarscanner
 
-      - name: SonarQube Quality Gate
-        uses: sonarsource/sonarqube-quality-gate-action@v1
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - name: SonarQube Begin Analysis
+        run: >
+          dotnet sonarscanner begin
+          /k:"my-dotnet-multi-purpose-webapp"
+          /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+          /d:sonar.host.url="${{ secrets.SONAR_HOST_URL }}"
+          /d:sonar.cs.opencover.reportsPaths="**/TestResults/*/coverage.cobertura.xml"
+
+      - name: Build for SonarQube
+        run: dotnet build --no-restore --configuration Release
+
+      - name: SonarQube End Analysis
+        run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
